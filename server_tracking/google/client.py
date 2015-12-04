@@ -11,6 +11,7 @@ from .. import DEFER_METHOD_THREADED, DEFER_METHOD_CELERY
 from . import (HTTP_URL, SSL_URL, COLLECT_PATH, DEBUG_PATH, HIT_TYPE_TRANSACTION, HIT_TYPE_TRANSACTION_ITEM,
                HIT_TYPE_EVENT, HIT_TYPE_SCREENVIEW, HIT_TYPE_PAGEVIEW, HIT_TYPE_SOCIAL, HIT_TYPE_TIMING,
                HIT_TYPE_EXCEPTION)
+from .debug import HitParserResults
 from .parameters import (GeneralParameters, PageViewParameters, EventParameters, AppTrackingParameters,
                          EComTransactionParameters, EComItemParameters, HitParameters, SessionParameters,
                          SocialInteractionParameters, TimingParameters, ExceptionParameters)
@@ -173,8 +174,8 @@ class AnalyticsClient(object):
         :param kwargs: Raw url parameters to update the generated url with.
         :return: In normal scenarios always returns ``True``. For synchronous requests actually processes the status
          code, but Google Analytics does not return error codes for invalid hits. In debug mode, hits are validated
-         by GA and this method returns the JSON response.
-        :rtype: bool | unicode | str
+         by GA and this method returns the parsed result.
+        :rtype: bool | server_tracking.google.debug.HitParserResults
         """
         request_params = self._general_parameters.url(hit_type)
         for p in params:
@@ -185,8 +186,9 @@ class AnalyticsClient(object):
         response = self._send(request_params)
         if response:
             if self._debug:
-                log.debug(response.json())
-                return response.json()
+                results = HitParserResults.from_dict(response.json(encoding='utf-8'))
+                results.log_all()
+                return results
             return response.status_code <= 400
         return True
 
