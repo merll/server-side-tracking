@@ -33,7 +33,10 @@ class ViewTitleExtractor(object):
         :type response: django.http.response.HttpResponse
         :return:
         """
-        return response.context_data['view'].title
+        view = response.context_data.get('view')
+        if view:
+            return getattr(view, 'title')
+        return None
 
 
 def get_title_extractors():
