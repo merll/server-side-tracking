@@ -6,9 +6,10 @@ from uuid import uuid4
 
 from django.core.exceptions import ImproperlyConfigured
 
-from .settings import SST_SETTINGS, GA_SETTINGS
+from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS, SERVER_SIDE_TRACKING_GA as GA_SETTINGS
 from ..google.client import AnalyticsClient
 from ..google.parameters import GeneralParameters, SessionParameters, PageViewParameters
+from ..google.sender import get_send_function
 from ..utils import class_from_name, anonymize_ip_address
 
 
@@ -127,11 +128,13 @@ def get_client(default_parameters=None, **kwargs):
         default_params.update(kwargs)
     else:
         default_params = GeneralParameters(tracking_id=GA_SETTINGS['property'], **kwargs)
-    return AnalyticsClient(default_params,
-                           ssl=GA_SETTINGS['ssl'],
-                           debug=SST_SETTINGS['debug'],
-                           send_method=SST_SETTINGS['send_method'],
-                           defer=SST_SETTINGS['defer'])
+    send_function = get_send_function(SST_SETTINGS['defer'],
+                                      ssl=GA_SETTINGS['ssl'],
+                                      debug=SST_SETTINGS['debug'],
+                                      default_method=SST_SETTINGS['send_method'],
+                                      post_fallback=SST_SETTINGS['post_fallback'],
+                                      timeout=SST_SETTINGS['timeout'])
+    return AnalyticsClient(send_function, default_params)
 
 
 def get_title(response):

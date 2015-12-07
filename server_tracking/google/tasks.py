@@ -2,37 +2,33 @@
 from __future__ import unicode_literals
 
 from datetime import datetime
-from celery import task
+from celery import Task, shared_task
 from requests import Session
 
+from .sender import AnalyticsSender
 from .parameters import HitParameters
 
 
-_session = Session()
+class AnalyticsSendTask(Task):
+    ignore_result = True
+
+    def __init__(self):
+        config = self.app.conf
+        self.session = session = Session()
+        sst_settings = config.SERVER_SIDE_TRACKING
+        ga_settings = config.SERVER_SIDE_TRACKING_GA
+        self.sender = AnalyticsSender(session,
+                                      ssl=ga_settings['ssl'],
+                                      debug=sst_settings['debug'],
+                                      default_method=sst_settings['send_method'],
+                                      post_fallback=sst_settings['post_fallback'],
+                                      timeout=sst_settings['timeout'])
 
 
-def _update_queue_time(request_params, timestamp):
-    """
-
-    :param request_params:
-    :type request_params: dict
-    :param timestamp:
-    :type timestamp: int
-    :return:
-    """
+@shared_task(bind=True, name='googleanalytics.send_hit', base=AnalyticsSendTask)
+def send_hit(self, request_params, timestamp):
     time_queued = datetime.utcfromtimestamp(timestamp)
     time_sent = datetime.utcnow()
     queued_delta = time_sent - time_queued
     request_params.update(HitParameters(queue_time=queued_delta.seconds).url())
-
-
-@task(name='googleanalytics.send_get', ignore_result=True)
-def send_get(base_url, request_params, timestamp):
-    _update_queue_time(request_params, timestamp)
-    _session.request('GET', base_url, params=request_params)
-
-
-@task(name='googleanalytics.send_post', ignore_result=True)
-def send_post(base_url, request_data, timestamp):
-    _update_queue_time(request_data, timestamp)
-    _session.request('POST', base_url, data=request_data)
+    return self.sender.send(request_params)

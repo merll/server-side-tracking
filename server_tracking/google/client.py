@@ -2,26 +2,12 @@
 from __future__ import unicode_literals
 
 import logging
-import time
-from threading import Thread
 
-import requests
-
-from .. import DEFER_METHOD_THREADED, DEFER_METHOD_CELERY
-from . import (HTTP_URL, SSL_URL, COLLECT_PATH, DEBUG_PATH, HIT_TYPE_TRANSACTION, HIT_TYPE_TRANSACTION_ITEM,
-               HIT_TYPE_EVENT, HIT_TYPE_SCREENVIEW, HIT_TYPE_PAGEVIEW, HIT_TYPE_SOCIAL, HIT_TYPE_TIMING,
-               HIT_TYPE_EXCEPTION)
-from .debug import HitParserResults
+from . import (HIT_TYPE_TRANSACTION, HIT_TYPE_TRANSACTION_ITEM, HIT_TYPE_EVENT, HIT_TYPE_SCREENVIEW, HIT_TYPE_PAGEVIEW,
+               HIT_TYPE_SOCIAL, HIT_TYPE_TIMING, HIT_TYPE_EXCEPTION)
 from .parameters import (GeneralParameters, PageViewParameters, EventParameters, AppTrackingParameters,
                          EComTransactionParameters, EComItemParameters, HitParameters, SessionParameters,
                          SocialInteractionParameters, TimingParameters, ExceptionParameters)
-
-try:
-    from .tasks import send_get, send_post
-    use_celery = True
-except ImportError:
-    send_get, send_post = None, None
-    use_celery = False
 
 
 log = logging.getLogger(__name__)
@@ -31,31 +17,16 @@ class AnalyticsClient(object):
     """
     Client implementation that uses the Google Analytics Measurement Protocol.
 
+    :param send_func: A function that takes request parameters as input and sends a request to the appropriate URL.
+    :type send_func: callable
     :param general_parameters: Default general parameters to pass with each hit.
     :type general_parameters: server_tracking.google.parameters.GeneralParameters | dict
     :param misc_parameters: Additional UrlGenerator objects to use as default parameters.
     :type misc_parameters: tuple[server_tracking.parameters.UrlGenerator] |
      list[server_tracking.parameters.UrlGenerator]
-    :param ssl: Use the HTTPS base URL.
-    :type ssl: bool
-    :param debug: Only debug hits. They are returned with debug information but not processed by GA.
-    :type debug: bool
-    :param send_method: Method to use for sending. Default is ``GET``. Change to ``POST`` for large payloads.
-    :type send_method: unicode | str
-    :param defer: Method to defer the request send operation. See :attr:`AnalyticsClient.defer` for details.
-    :type defer: unicode | str
     :param kwargs: Keyword arguments for general parameters.
     """
-    def __init__(self, general_parameters=None, misc_parameters=(), ssl=True, debug=False, send_method='GET',
-                 defer=None, **kwargs):
-        self._debug = debug
-        self._ssl = True
-        base_url = SSL_URL if ssl else HTTP_URL
-        if debug:
-            self._base_url = '{0}{1}{2}'.format(base_url, DEBUG_PATH, COLLECT_PATH)
-        else:
-            self._base_url = '{0}{1}'.format(base_url, COLLECT_PATH)
-        self._client = requests.Session()
+    def __init__(self, send_func, general_parameters=None, misc_parameters=(), **kwargs):
         if isinstance(general_parameters, dict):
             self._general_parameters = GeneralParameters(general_parameters)
         elif isinstance(general_parameters, GeneralParameters):
@@ -66,35 +37,7 @@ class AnalyticsClient(object):
         self._misc_parameters = misc_parameters
         self._misc_url = None
         self.update_misc_parameters()
-        self._send_method = send_method
-        self._defer = defer
-        self._update_send_method()
-
-    def _update_send_method(self):
-        method = self._send_method.upper()
-        defer = self._defer if not self._debug else None
-        if method not in ('GET', 'POST'):
-            raise ValueError("Invalid send method. Must be GET or POST.")
-        if self._defer not in (None, DEFER_METHOD_THREADED, DEFER_METHOD_CELERY):
-            raise ValueError("Invalid defer method. Must be None, DEFER_METHOD_THREADED, or DEFER_METHOD_CELERY.")
-
-        if defer == DEFER_METHOD_THREADED:
-            if method == 'POST':
-                self._send = self.threaded_post
-            else:
-                self._send = self.threaded_get
-        elif defer == DEFER_METHOD_CELERY:
-            if not use_celery:
-                raise ValueError("Celery is not available.")
-            if method == 'POST':
-                self._send = self.celery_post
-            else:
-                self._send = self.celery_get
-        else:
-            if method == 'POST':
-                self._send = self.post
-            else:
-                self._send = self.get
+        self._send_func = send_func
 
     def update_misc_parameters(self):
         """
@@ -104,64 +47,6 @@ class AnalyticsClient(object):
         self._misc_url = misc_url = {}
         for p in self._misc_parameters:
             misc_url.update(p.url())
-
-    def get(self, request_params):
-        """
-        Synchronously sends a hit to GA via a GET-request.
-
-        :param request_params: URL parameters.
-        :type request_params: dict
-        :return: A response object.
-        :rtype: requests.models.Response
-        """
-        return self._client.request('GET', self._base_url, params=request_params)
-
-    def post(self, request_data):
-        """
-        Synchronously sends a hit to GA via a POST-request.
-
-        :param request_data: POST payload.
-        :type request_data: dict
-        :return: A response object.
-        :rtype: requests.models.Response
-        """
-        return self._client.request('POST', self._base_url, data=request_data)
-
-    def threaded_get(self, request_params):
-        """
-        Sends a hit to GA via a GET-request through a separate thread.
-
-        :param request_params: URL parameters.
-        :type request_params: dict
-        """
-        Thread(target=self._client.request, args=('GET', self._base_url, ), kwargs={'params': request_params}).start()
-
-    def threaded_post(self, request_data):
-        """
-        Sends a hit to GA via a POST-request through a separate thread.
-
-        :param request_data: POST payload.
-        :type request_data: dict
-        """
-        Thread(target=self._client.request, args=('POST', self._base_url, ), kwargs={'data': request_data}).start()
-
-    def celery_get(self, request_params):
-        """
-        Sends a hit to GA via a GET-request through a Celery task. This will also send along a queuing time.
-
-        :param request_params: URL parameters.
-        :type request_params: dict
-        """
-        send_get.apply_async(args=(self._base_url, request_params, int(time.time())))
-
-    def celery_post(self, request_data):
-        """
-        Sends a hit to GA via a POST-request through a Celery task. This will also send along a queuing time.
-
-        :param request_data: POST payload.
-        :type request_data: dict
-        """
-        send_post.apply_async(args=(self._base_url, request_data, int(time.time())))
 
     def request(self, hit_type, *params, **kwargs):
         """
@@ -183,12 +68,8 @@ class AnalyticsClient(object):
                 request_params.update(p.url())
         request_params.update(self._misc_parameters)
         request_params.update(kwargs)
-        response = self._send(request_params)
+        response = self._send_func(request_params)
         if response:
-            if self._debug:
-                results = HitParserResults.from_dict(response.json(encoding='utf-8'))
-                results.log_all()
-                return results
             return response.status_code <= 400
         return True
 
@@ -340,7 +221,7 @@ class AnalyticsClient(object):
         """
         social = SocialInteractionParameters(network=network, action=action, target=target)
         page = PageViewParameters(page_params) if page_params else None
-        return self.request(HIT_TYPE_SOCIAL, social, page, *misc_params)
+        return self.request(HIT_TYPE_SOCIAL, social, page, *misc_params, **kwargs)
 
     def timing(self, user_timing_category, user_timing_variable, user_timing_value, page_params=None, misc_params=(),
                **kwargs):
@@ -416,36 +297,3 @@ class AnalyticsClient(object):
     def misc_parameters(self, value):
         self._misc_parameters = value
         self.update_misc_parameters()
-
-    @property
-    def send_method(self):
-        """
-        HTTP method to use for sending hits. Can be ``GET`` or ``POST``. ``GET`` is the default; ``POST`` needs to
-        be used for larger requests.
-
-        :return: HTTP send method.
-        :rtype: unicode | str
-        """
-        return self._send_method
-
-    @send_method.setter
-    def send_method(self, value):
-        self._send_method = value
-        self._update_send_method()
-
-    @property
-    def defer(self):
-        """
-        Method to defer the request send operation. This can be ``None`` (synchronous), :data:`.DEFER_METHOD_THREADED`
-        for spawning a thread for each hit, or :data:`.DEFER_METHOD_CELERY` for deferring the send operation to a
-        Celery task. If ``debug`` is set to ``True``, hits are always sent synchronously for retrieving feedback.
-
-        :return: Defer setting.
-        :rtype: unicode | str
-        """
-        return self._defer
-
-    @defer.setter
-    def defer(self, value):
-        self._defer = value
-        self._update_send_method()

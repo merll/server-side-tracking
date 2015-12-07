@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from .settings import SST_SETTINGS
+from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS
 from .utils import process_pageview
 
 
