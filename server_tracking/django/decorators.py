@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.http import HttpResponse
 
-from server_tracking.django.utils import get_default_parameters, default_client, log
+from .utils import get_default_parameters, default_client, log
 
 
 def track_event(category, action, label=None, value=None, misc_parameters=()):
