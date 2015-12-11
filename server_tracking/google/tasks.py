@@ -3,13 +3,14 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 from celery import Task, shared_task
-from requests import Session
+from requests import Session, RequestException
 
 from .sender import AnalyticsSender
 from .parameters import HitParameters
 
 
 class AnalyticsSendTask(Task):
+    abstract = True
     ignore_result = True
 
     def __init__(self):
@@ -31,4 +32,7 @@ def send_hit(self, request_params, timestamp):
     time_sent = datetime.utcnow()
     queued_delta = time_sent - time_queued
     request_params.update(HitParameters(queue_time=queued_delta.seconds).url())
-    return self.sender.send(request_params)
+    try:
+        return self.sender.send(request_params)
+    except RequestException as e:
+        raise self.retry(exc=e)
