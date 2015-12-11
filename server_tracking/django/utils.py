@@ -5,6 +5,7 @@ import logging
 from uuid import uuid4
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.six import text_type
 
 from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS, SERVER_SIDE_TRACKING_GA as GA_SETTINGS
 from ..google.client import AnalyticsClient
@@ -156,7 +157,7 @@ def get_default_parameters(request, response, pageview_parameters=None, session_
                                     salt=SST_SETTINGS['cookie_salt'],
                                     max_age=SST_SETTINGS['cookie_max_age'])
     if cid is None:
-        cid = uuid4()
+        cid = text_type(uuid4())
         updated_cid = True
     else:
         updated_cid = False
