@@ -26,9 +26,6 @@ GA_DEFAULT_SETTINGS = {
     'ping_label': None,
 }
 
-SST_SETTINGS = SST_DEFAULT_SETTINGS.copy()
-GA_SETTINGS = GA_DEFAULT_SETTINGS.copy()
-
 
 def update_default_settings(settings, settings_var, default):
     config = getattr(settings, settings_var)
@@ -36,4 +33,6 @@ def update_default_settings(settings, settings_var, default):
         for k, v in iteritems(default):
             config.setdefault(k, v)
     else:
-        setattr(config, settings_var, default.copy())
+        config = default.copy()
+        setattr(settings, settings_var, config)
+    return config
