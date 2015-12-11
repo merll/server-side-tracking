@@ -112,7 +112,7 @@ def set_client_id(request, response, client_id, consent_action):
                                salt=SST_SETTINGS['cookie_salt'],
                                max_age=c_max_age,
                                secure=SST_SETTINGS['cookie_secure'],
-                               http_only=SST_SETTINGS['cookie_http_only'])
+                               httponly=SST_SETTINGS['cookie_httponly'])
     return client_id
 
 
