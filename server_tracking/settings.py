@@ -9,6 +9,8 @@ SST_DEFAULT_SETTINGS = {
     'cookie_max_age': 63072000,
     'cookie_path': '/',
     'cookie_salt': '',
+    'cookie_http_only': True,
+    'cookie_secure': True,
     'debug': False,
     'send_method': 'GET',
     'post_fallback': True,

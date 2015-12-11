@@ -109,7 +109,9 @@ def set_client_id(request, response, client_id, consent_action):
     response.set_signed_cookie(SST_SETTINGS['cookie_name'], client_id,
                                path=SST_SETTINGS['cookie_path'],
                                salt=SST_SETTINGS['cookie_salt'],
-                               max_age=c_max_age)
+                               max_age=c_max_age,
+                               secure=SST_SETTINGS['cookie_secure'],
+                               http_only=SST_SETTINGS['cookie_http_only'])
     return client_id
 
 
