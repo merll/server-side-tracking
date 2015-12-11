@@ -89,9 +89,16 @@ def get_send_function(defer, **kwargs):
         except ImportError:
             send_hit = None
             raise ValueError("Celery is not available.")
-        return lambda request_params: send_hit.apply_async(args=(request_params, time.time()))
-    else:
-        sender = AnalyticsSender(Session(), **kwargs)
-        if defer == DEFER_METHOD_THREADED:
-            return lambda request_params: Thread(target=sender.send, args=(request_params, )).start()
-        return sender.send
+
+        def _send_func(request_params):
+            send_hit.apply_async(args=(request_params, time.time()))
+
+        return _send_func
+
+    sender = AnalyticsSender(Session(), **kwargs)
+    if defer == DEFER_METHOD_THREADED:
+        def _send_func(request_params):
+            Thread(target=sender.send, args=(request_params, )).start()
+
+        return _send_func
+    return sender.send
