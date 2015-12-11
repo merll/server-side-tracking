@@ -5,6 +5,7 @@ from datetime import datetime
 from celery import Task, shared_task
 from requests import Session, RequestException
 
+from ..settings import update_default_settings, SST_DEFAULT_SETTINGS, GA_DEFAULT_SETTINGS
 from .sender import AnalyticsSender
 from .parameters import HitParameters
 
@@ -16,8 +17,8 @@ class AnalyticsSendTask(Task):
     def __init__(self):
         config = self.app.conf
         self.session = session = Session()
-        sst_settings = config.SERVER_SIDE_TRACKING
-        ga_settings = config.SERVER_SIDE_TRACKING_GA
+        sst_settings = update_default_settings(config, 'SERVER_SIDE_TRACKING', SST_DEFAULT_SETTINGS)
+        ga_settings = update_default_settings(config, 'SERVER_SIDE_TRACKING_GA', GA_DEFAULT_SETTINGS)
         self.sender = AnalyticsSender(session,
                                       ssl=ga_settings['ssl'],
                                       debug=sst_settings['debug'],
