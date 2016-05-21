@@ -46,7 +46,7 @@ class HitParserResult(object):
         return cls(d['valid'], d['hit'], messages)
 
     def __str__(self):
-        status = 'Valid' if self.valid else 'Invalud'
+        status = 'Valid' if self.valid else 'Invalid'
         return '{0} hit: {1}'.format(status, self.hit)
 
     def log(self):
