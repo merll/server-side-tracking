@@ -37,7 +37,7 @@ class ViewTitleExtractor(object):
         """
         view = response.context_data.get('view')
         if view:
-            return getattr(view, 'title')
+            return view.title
         return None
 
 
