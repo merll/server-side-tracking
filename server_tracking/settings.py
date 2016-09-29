@@ -5,7 +5,9 @@ from six import iteritems
 SST_DEFAULT_SETTINGS = {
     'cookie_name': 'vn',
     'cookie_action': 'cookie_action',
-    'cookie_accepted': 'cookies_accepted',
+    'cookie_status': 'cookie_status',
+    'cookie_status_refused': 0,
+    'cookie_status_accepted': 1,
     'cookie_max_age': 63072000,
     'cookie_path': '/',
     'cookie_salt': '',

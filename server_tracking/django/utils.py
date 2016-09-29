@@ -88,15 +88,15 @@ def extract_parameters(request, anonymize_ip):
 
 def set_client_id(request, response, client_id, consent_action):
     if consent_action == 'refuse':
-        c_accept = 0
+        c_accept = SST_SETTINGS['cookie_status_refused']
         c_max_age = None
     elif consent_action == 'accept':
-        c_accept = 1
+        c_accept = SST_SETTINGS['cookie_status_accepted']
         c_max_age = SST_SETTINGS['cookie_max_age']
     else:
         c_accept = None
         c_consent_status = request.COOKIES.get(SST_SETTINGS['cookie_accepted'])
-        if c_consent_status:
+        if c_consent_status == SST_SETTINGS['cookie_status_accepted']:
             c_max_age = SST_SETTINGS['cookie_max_age']
         else:
             c_max_age = None
