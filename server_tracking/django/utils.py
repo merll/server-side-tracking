@@ -95,14 +95,14 @@ def set_client_id(request, response, client_id, consent_action):
         c_max_age = SST_SETTINGS['cookie_max_age']
     else:
         c_accept = None
-        c_consent_status = request.COOKIES.get(SST_SETTINGS['cookie_accepted'])
+        c_consent_status = request.COOKIES.get(SST_SETTINGS['cookie_status'])
         if c_consent_status == SST_SETTINGS['cookie_status_accepted']:
             c_max_age = SST_SETTINGS['cookie_max_age']
         else:
             c_max_age = None
 
     if c_accept is not None:
-        response.set_cookie(SST_SETTINGS['cookie_accepted'], c_accept,
+        response.set_cookie(SST_SETTINGS['cookie_status'], c_accept,
                             path=SST_SETTINGS['cookie_path'],
                             expires='Fri, 31 Dec 9999 23:59:59 GMT')
     if consent_action:
