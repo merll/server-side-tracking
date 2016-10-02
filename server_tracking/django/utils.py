@@ -193,5 +193,14 @@ def process_ping(request, response, pageview_parameters=None, session_parameters
                                 session_params=session_params)
 
 
+def process_exception(request, response, description=None, fatal=None, pageview_parameters=None,
+                      session_parameters=None):
+    pageview_params, session_params = get_default_parameters(request, response,
+                                                             pageview_parameters=pageview_parameters,
+                                                             session_parameters=session_parameters)
+    return default_client.exception(description=description, fatal=fatal, page_params=pageview_params,
+                                    misc_params=(session_params,))
+
+
 default_client = get_client()
 title_extractors = get_title_extractors()

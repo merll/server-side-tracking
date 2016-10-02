@@ -20,6 +20,10 @@ SST_DEFAULT_SETTINGS = {
     'defer': None,
     'anonymize_ip': True,
     'pageview_exclude': (),
+    'pageview_na_exceptions': False,
+    'pageview_server_exceptions': False,
+    'pageview_ajax_responses': False,
+    'pageview_ajax_exceptions': False,
 }
 GA_DEFAULT_SETTINGS = {
     'ssl': True,
