@@ -78,7 +78,7 @@ class AnalyticsSender(object):
         if len(p_req.body) > 8192:
             raise SenderException("Request is too large for POST method:",
                                   len(p_req.body))
-        return self._session.request('POST', self._base_url, data=request_data, timeout=self._timeout)
+        return self._session.send(p_req, timeout=self._timeout)
 
     def send(self, request_params):
         """
