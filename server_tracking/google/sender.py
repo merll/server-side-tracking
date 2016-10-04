@@ -35,12 +35,13 @@ class AnalyticsSender(object):
     def __init__(self, session, ssl=True, debug=False, default_method='GET', post_fallback=True, timeout=10):
         self._debug = debug
         self._ssl = True
-        base_url = SSL_URL if ssl else HTTP_URL
+        root_url = SSL_URL if ssl else HTTP_URL
         if debug:
-            self._base_url = '{0}{1}{2}'.format(base_url, DEBUG_PATH, COLLECT_PATH)
+            self._base_url = '{0}{1}{2}'.format(root_url, DEBUG_PATH, COLLECT_PATH)
             session.hooks['response'].append(process_debug_response)
         else:
-            self._base_url = '{0}{1}'.format(base_url, COLLECT_PATH)
+            self._base_url = '{0}{1}'.format(root_url, COLLECT_PATH)
+        self._root_url_len = len(root_url)
         self._session = session
         self._timeout = timeout
         self.send = getattr(self, default_method.lower())
@@ -57,7 +58,7 @@ class AnalyticsSender(object):
         """
         req = Request('GET', self._base_url, params=request_params)
         p_req = self._session.prepare_request(req)
-        if len(p_req.url) > 2000:
+        if len(p_req.url) - self._root_url_len > 2000:
             if self._post_fallback:
                 return self.post(request_params)
             raise SenderException("Request is too large for GET method and POST fallback is deactivated:",
