@@ -42,6 +42,7 @@ class AnalyticsSender(object):
         else:
             self._base_url = '{0}{1}'.format(root_url, COLLECT_PATH)
         self._root_url_len = len(root_url)
+        self._base_url_len = len(self._base_url)
         self._session = session
         self._timeout = timeout
         self.send = getattr(self, default_method.lower())
@@ -60,7 +61,7 @@ class AnalyticsSender(object):
         p_req = self._session.prepare_request(req)
         if len(p_req.url) - self._root_url_len > 2000:
             if self._post_fallback:
-                return self.post(request_params)
+                return self.post(p_req.url[self._base_url_len+1:])
             raise SenderException("Request is too large for GET method and POST fallback is deactivated:",
                                   len(p_req.url))
         return self._session.send(p_req, timeout=self._timeout)
