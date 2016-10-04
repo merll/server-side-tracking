@@ -7,6 +7,7 @@ from threading import Thread
 from requests import Request, Session
 
 from .. import DEFER_METHOD_THREADED, DEFER_METHOD_CELERY
+from ..exceptions import SenderException
 from . import COLLECT_PATH, DEBUG_PATH, HTTP_URL, SSL_URL
 from .debug import process_debug_response
 
@@ -57,7 +58,10 @@ class AnalyticsSender(object):
         req = Request('GET', self._base_url, params=request_params)
         p_req = self._session.prepare_request(req)
         if len(p_req.url) > 2000:
-            return self.post(request_params)
+            if self._post_fallback:
+                return self.post(request_params)
+            raise SenderException("Request is too large for GET method and POST fallback is deactivated:",
+                                  len(p_req.url))
         return self._session.send(p_req, timeout=self._timeout)
 
     def post(self, request_data):
@@ -69,6 +73,11 @@ class AnalyticsSender(object):
         :return: A response object.
         :rtype: requests.models.Response
         """
+        req = Request('POST', self._base_url, data=request_data)
+        p_req = self._session.prepare_request(req)
+        if len(p_req.body) > 8192:
+            raise SenderException("Request is too large for POST method:",
+                                  len(p_req.body))
         return self._session.request('POST', self._base_url, data=request_data, timeout=self._timeout)
 
     def send(self, request_params):
