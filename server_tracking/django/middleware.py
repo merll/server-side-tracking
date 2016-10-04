@@ -24,7 +24,8 @@ class PageViewMiddleware(object):
         return self.process_response(request, response)
 
     def process_response(self, request, response):
-        if 200 <= response.status_code < 300:
+        status_code = response.status_code
+        if 200 <= status_code < 300:
             if self.track_ajax_responses or not request.is_ajax():
                 path = request.path_info.lstrip('/')
                 if not any(path.startswith(exclude) for exclude in self.exclude):
@@ -32,18 +33,16 @@ class PageViewMiddleware(object):
                         process_pageview(request, response)
                     except Exception as e:
                         log.exception(e)
-        elif response.status_code == 404:
-            if self.track_not_available:
-                if self.track_ajax_exceptions or not request.is_ajax():
-                    try:
-                        process_exception(request, response, description=response.reason_phrase, fatal=0)
-                    except Exception as e:
-                        log.exception(e)
-        elif response.status_code >= 400:
-            if self.track_exceptions:
-                if self.track_ajax_exceptions or not request.is_ajax():
-                    try:
-                        process_exception(request, response, description=response.reason_phrase, fatal=1)
-                    except Exception as e:
-                        log.exception(e)
+        elif status_code == 404:
+            if self.track_not_available and (self.track_ajax_exceptions or not request.is_ajax()):
+                try:
+                    process_exception(request, response, description=response.reason_phrase, fatal=0)
+                except Exception as e:
+                    log.exception(e)
+        elif status_code >= 400:
+            if self.track_exceptions and (self.track_ajax_exceptions or not request.is_ajax()):
+                try:
+                    process_exception(request, response, description=response.reason_phrase or status_code, fatal=1)
+                except Exception as e:
+                    log.exception(e)
         return response
