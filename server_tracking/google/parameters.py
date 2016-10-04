@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 import random
 import sys
 
-from ..parameters import UP, UrlGenerator, EnumeratedUrlGenerator, PrefixUrlGenerator, InvalidParametersException
+from ..exceptions import InvalidParametersException
+from ..parameters import UP, UrlGenerator, EnumeratedUrlGenerator, PrefixUrlGenerator
 
 
 class CustomDimensionUrlGenerator(UrlGenerator):

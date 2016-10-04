@@ -5,23 +5,11 @@ from collections import namedtuple
 import itertools
 import six
 
+from .exceptions import InvalidParametersException
+
 
 UrlParameter = UP = namedtuple('UrlParameter', ['url_component', 'required'])
 VariableParameter = VP = namedtuple('VariableParameter', ['index'])
-
-
-@six.python_2_unicode_compatible
-class InvalidParametersException(Exception):
-    @property
-    def message(self):
-        if self.args:
-            if len(self.args) > 1:
-                return self.args[0].format(*self.args[1:])
-            return self.args[0]
-        return None
-
-    def __str__(self):
-        return self.message
 
 
 def _get_func(item):

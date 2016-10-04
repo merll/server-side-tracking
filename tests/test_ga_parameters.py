@@ -5,7 +5,7 @@ import unittest
 
 from server_tracking.parameters import VP
 from server_tracking.google import HIT_TYPE_EVENT, EECOM_ACTION_PURCHASE
-from server_tracking.google.parameters import (GeneralParameters, SessionParameters, InvalidParametersException,
+from server_tracking.google.parameters import (GeneralParameters, SessionParameters,
                                                CustomDimensionUrlGenerator, CustomMetricUrlGenerator,
                                                EComTransactionParameters, EComItem, EComItemParameters,
                                                EnhancedEComGeneralParameters, EnhancedEComProductParameters,
@@ -13,6 +13,7 @@ from server_tracking.google.parameters import (GeneralParameters, SessionParamet
                                                EnhancedEComPIListParameters,
                                                EnhancedEComPICustomMetricProductParameters,
                                                EnhancedEComPIProductParameters)
+from server_tracking.exceptions import InvalidParametersException
 
 CLIENT_ID = 42
 TRACKING_ID = 'UA-x'
