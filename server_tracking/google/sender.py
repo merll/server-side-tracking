@@ -8,7 +8,7 @@ from requests import Request, Session
 
 from .. import DEFER_METHOD_THREADED, DEFER_METHOD_CELERY
 from ..exceptions import SenderException
-from . import COLLECT_PATH, DEBUG_PATH, HTTP_URL, SSL_URL
+from . import COLLECT_PATH, DEBUG_PATH, HTTP_URL, SSL_URL, GET_SIZE_LIMIT, POST_SIZE_LIMIT
 from .debug import process_debug_response
 
 
@@ -59,7 +59,7 @@ class AnalyticsSender(object):
         """
         req = Request('GET', self._base_url, params=request_params)
         p_req = self._session.prepare_request(req)
-        if len(p_req.url) - self._root_url_len > 2000:
+        if len(p_req.url) - self._root_url_len > GET_SIZE_LIMIT:
             if self._post_fallback:
                 return self.post(p_req.url[self._base_url_len+1:])
             raise SenderException("Request is too large for GET method and POST fallback is deactivated:",
@@ -77,7 +77,7 @@ class AnalyticsSender(object):
         """
         req = Request('POST', self._base_url, data=request_data)
         p_req = self._session.prepare_request(req)
-        if len(p_req.body) > 8192:
+        if len(p_req.body) > POST_SIZE_LIMIT:
             raise SenderException("Request is too large for POST method:",
                                   len(p_req.body))
         return self._session.send(p_req, timeout=self._timeout)

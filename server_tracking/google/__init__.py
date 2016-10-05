@@ -6,6 +6,9 @@ SSL_URL = 'https://www.google-analytics.com'
 COLLECT_PATH = '/collect'
 DEBUG_PATH = '/debug'
 
+GET_SIZE_LIMIT = 2000
+POST_SIZE_LIMIT = 8000
+
 HIT_TYPE_PAGEVIEW = 'pageview'
 HIT_TYPE_SCREENVIEW = 'screenview'
 HIT_TYPE_EVENT = 'event'
