@@ -14,7 +14,7 @@ SST_DEFAULT_SETTINGS = {
     'cookie_httponly': True,
     'cookie_secure': True,
     'debug': False,
-    'send_method': 'GET',
+    'send_method': 'POST',
     'post_fallback': True,
     'timeout': 10,
     'defer': None,
