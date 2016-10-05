@@ -91,8 +91,11 @@ class AbstractUrlGenerator(six.with_metaclass(ParameterMeta)):
     def __init__(self, params=None, **kwargs):
         if self.meta.abstract:
             raise ValueError("Cannot instantiate an abstract UrlGenerator class.")
-        self._params = {}
-        self.update(params)
+        if isinstance(params, self.__class__):
+            self._params = params._params.copy()
+        else:
+            self._params = {}
+            self.update(params)
         self.update_from_kwargs(kwargs)
 
     def _update_from_dict(self, d):

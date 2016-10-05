@@ -27,10 +27,8 @@ class AnalyticsClient(object):
     :param kwargs: Keyword arguments for general parameters.
     """
     def __init__(self, send_func, general_parameters=None, misc_parameters=(), **kwargs):
-        if isinstance(general_parameters, dict):
+        if isinstance(general_parameters, (dict, GeneralParameters)):
             self._general_parameters = GeneralParameters(general_parameters)
-        elif isinstance(general_parameters, GeneralParameters):
-            self._general_parameters = general_parameters.copy()
         elif general_parameters is not None:
             raise ValueError("Invalid type of default parameters: {0}.", type(general_parameters).__name__)
         self._general_parameters.update(kwargs)
