@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 HTTP_URL = 'http://www.google-analytics.com'
-SSL_URL = 'https://ssl.google-analytics.com'
+SSL_URL = 'https://www.google-analytics.com'
 COLLECT_PATH = '/collect'
 DEBUG_PATH = '/debug'
 
