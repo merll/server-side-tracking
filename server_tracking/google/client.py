@@ -30,7 +30,7 @@ class AnalyticsClient(object):
         if isinstance(general_parameters, dict):
             self._general_parameters = GeneralParameters(general_parameters)
         elif isinstance(general_parameters, GeneralParameters):
-            self._general_parameters = general_parameters
+            self._general_parameters = general_parameters.copy()
         elif general_parameters is not None:
             raise ValueError("Invalid type of default parameters: {0}.", type(general_parameters).__name__)
         self._general_parameters.update(kwargs)
