@@ -66,7 +66,7 @@ class AnalyticsClient(object):
         for p in params:
             if p:
                 request_params.update(p.url())
-        request_params.update(self._misc_parameters)
+        request_params.update(self._misc_url)
         request_params.update(kwargs)
         response = self._send_func(request_params)
         if response:
