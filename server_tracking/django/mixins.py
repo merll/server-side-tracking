@@ -3,21 +3,18 @@ from __future__ import unicode_literals
 
 import logging
 
-from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS
-from .utils import process_pageview
+from .middleware import PageViewMiddleware
 
 
 log = logging.getLogger(__name__)
 
 
 class PageViewMixin(object):
+    def __init__(self, *args, **kwargs):
+        super(PageViewMixin, self).__init__(*args, **kwargs)
+        self._process_response = PageViewMiddleware().process_response
+
     def dispatch(self, request, *args, **kwargs):
         response = super(PageViewMixin, self).dispatch(request, *args, **kwargs)
-        if not request.is_ajax():
-            path = request.path_info.lstrip('/')
-            if not any(path.startswith(exclude) for exclude in SST_SETTINGS['pageview_exclude']):
-                try:
-                    process_pageview(request, response)
-                except Exception as e:
-                    log.exception(e)
+        self._process_response(request, response)
         return response
