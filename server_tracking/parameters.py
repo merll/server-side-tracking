@@ -9,6 +9,7 @@ from .exceptions import InvalidParametersException
 
 
 UrlParameter = UP = namedtuple('UrlParameter', ['url_component', 'required'])
+UP.__new__.__defaults__ = (False, )
 VariableParameter = VP = namedtuple('VariableParameter', ['index'])
 
 
@@ -47,10 +48,7 @@ def _copy_meta(cls_meta, meta, fields):
 class ParameterMeta(type):
     def __new__(mcs, name, bases, dct):
         new_cls = super(ParameterMeta, mcs).__new__(mcs, name, bases, dct)
-        if hasattr(new_cls, 'meta'):
-            param_base = new_cls.meta
-        else:
-            param_base = None
+        param_base = getattr(new_cls, 'meta', None)
         new_cls.meta = meta = type(_META_INFO_NAME, (object, ), _META_INFO_DEFAULT)()
         _copy_meta(param_base, meta, _META_INFO_FIELDS)
         _copy_meta(dct.get('Meta'), meta, _META_INFO_FIELDS + ['abstract'])
