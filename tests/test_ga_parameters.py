@@ -69,7 +69,9 @@ class UrlGeneratorTest(unittest.TestCase):
 
     def test_session_parameters(self):
         sp = SessionParameters(user_id='1')
-        self.assertRaises(InvalidParametersException, sp.url)
+        with self.assertRaises(InvalidParametersException) as exc:
+            sp.url()
+        self.assertEqual(exc.exception.args[1], 'client_id')
         sp.client_id = CLIENT_ID
         url = sp.url()
         self.assertDictEqual(url, {

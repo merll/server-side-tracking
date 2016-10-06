@@ -13,7 +13,7 @@ UP.__new__.__defaults__ = (False, )
 VariableParameter = VP = namedtuple('VariableParameter', ['index'])
 
 
-def _get_func(item):
+def _get_property(item):
     def get_item(self):
         return self._params.get(item)
 
@@ -29,7 +29,7 @@ def _get_func(item):
         except KeyError:
             pass
 
-    return get_item, set_item, del_item
+    return property(get_item, set_item, del_item)
 
 
 _META_INFO_NAME = str('MetaInfo')
@@ -69,16 +69,20 @@ class ParameterMeta(type):
             meta.parameters = parameters = cls_parameters
             meta.custom_parameters = c_parameters = cls_c_parameters
             meta.parameter_names = [i[0] for i in itertools.chain(cls_parameters, cls_c_parameters)]
-        meta.required_parameters = required_parameters = set()
+        meta.required_components = required_components = set()
+        meta.component_parameters = component_rev = {}
         if not getattr(meta, 'abstract', False):
             custom_prefix = meta.custom_prefix
             for p_name, param in parameters:
+                url_comp = param.url_component
                 if param.required:
-                    required_parameters.add(p_name)
-                setattr(new_cls, p_name, property(*_get_func(param.url_component)))
+                    required_components.add(url_comp)
+                setattr(new_cls, p_name, _get_property(url_comp))
+                component_rev[url_comp] = p_name
             for p_name, param in c_parameters:
                 url_comp = '{0}{1}'.format(custom_prefix, param.index)
-                setattr(new_cls, p_name, property(*_get_func(url_comp)))
+                setattr(new_cls, p_name, _get_property(url_comp))
+                component_rev[url_comp] = p_name
         return new_cls
 
 
@@ -130,12 +134,8 @@ class AbstractUrlGenerator(six.with_metaclass(ParameterMeta)):
                 raise ValueError("Invalid field name '{0}'.".format(k))
 
     def validate(self):
-        required = self.meta.required_parameters
-        missing = set()
-        for name in required:
-            value = getattr(self, name)
-            if value is None:
-                missing.add(name)
+        missing = {self.meta.component_parameters[req]
+                   for req in self.meta.required_components.difference(self._params)}
         if missing:
             raise InvalidParametersException("Parameters are required, but missing: {0}",
                                              ', '.join(missing))
