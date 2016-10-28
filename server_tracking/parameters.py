@@ -143,7 +143,7 @@ class AbstractUrlGenerator(six.with_metaclass(ParameterMeta)):
                 raise ValueError("Invalid field name '{0}'.".format(k))
 
     def is_empty(self):
-        return len(self._params) > 0
+        return not self._params
 
     def validate(self):
         missing = {self.meta.component_parameters[req]
