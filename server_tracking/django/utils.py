@@ -52,10 +52,11 @@ def get_title_extractors():
                                    "{0}.".format(e.args[0]))
 
 
-def extract_parameters(request, anonymize_ip):
+def extract_parameters(request, anonymize_ip, on_page):
     """
     :type request: django.http.HttpRequest
     :type anonymize_ip: bool
+    :type on_page: bool
     :return: dict
     """
     get_meta = request.META.get
@@ -72,19 +73,23 @@ def extract_parameters(request, anonymize_ip):
         first_language = accept_language.partition(';')[0].split(',')[0]
     else:
         first_language = None
-    return {
+    params = {
         'ip_override': ip_override,
         'user_agent_override': get_meta('HTTP_USER_AGENT'),
-        'document_referrer': get_meta('HTTP_REFERER'),
         'user_language': first_language or None,
-        'campaign_name': get_params('utm_campaign'),
-        'campaign_source': get_params('utm_source'),
-        'campaign_medium': get_params('utm_medium'),
-        'campaign_keyword': get_params('utm_term'),
-        'campaign_content': get_params('utm_content'),
-        'google_adwords_id': get_params('gclid'),
-        'google_display_ads_id': get_params('dclid'),
     }
+    if on_page:
+        params.update({
+            'document_referrer': get_meta('HTTP_REFERER'),
+            'campaign_name': get_params('utm_campaign'),
+            'campaign_source': get_params('utm_source'),
+            'campaign_medium': get_params('utm_medium'),
+            'campaign_keyword': get_params('utm_term'),
+            'campaign_content': get_params('utm_content'),
+            'google_adwords_id': get_params('gclid'),
+            'google_display_ads_id': get_params('dclid'),
+        })
+    return params
 
 
 def set_client_id(request, response, client_id, consent_action):
@@ -153,7 +158,7 @@ def get_title(response):
     return None
 
 
-def get_default_parameters(request, response, pageview_parameters=None, session_parameters=None):
+def get_default_parameters(request, response, on_page=True, pageview_parameters=None, session_parameters=None):
     cid = request.get_signed_cookie(SST_SETTINGS['cookie_name'], default=None,
                                     salt=SST_SETTINGS['cookie_salt'],
                                     max_age=SST_SETTINGS['cookie_max_age'])
@@ -164,15 +169,18 @@ def get_default_parameters(request, response, pageview_parameters=None, session_
         updated_cid = False
     c_consent_action = request.COOKIES.get(SST_SETTINGS['cookie_action'])
     if response:
-        title = get_title(response)
+        title = get_title(response) if on_page else None
         if updated_cid or c_consent_action:
             cid = set_client_id(request, response, cid, c_consent_action)
     else:
         title = None
-    host_name = request.get_host().partition(':')[0]
-    pageview_params = PageViewParameters(host_name=host_name, path=request.path, title=title)
-    pageview_params.update(pageview_parameters)
-    session_params = SessionParameters(extract_parameters(request, SST_SETTINGS['anonymize_ip']))
+    session_params = SessionParameters(extract_parameters(request, SST_SETTINGS['anonymize_ip'], on_page))
+    if on_page:
+        host_name = request.get_host().partition(':')[0]
+        pageview_params = PageViewParameters(host_name=host_name, path=request.path, title=title)
+        pageview_params.update(pageview_parameters)
+    else:
+        pageview_params = pageview_parameters
     session_params.client_id = cid
     session_params.update(session_parameters)
     return pageview_params, session_params
@@ -191,9 +199,10 @@ def process_ping(request, response, pageview_parameters=None, session_parameters
     if not referrer:
         # Discard on direct access to view.
         return
-    pageview_params = PageViewParameters(location_url=referrer)
-    pageview_params.update(pageview_parameters)
-    session_params = get_default_parameters(request, response, session_parameters=session_parameters)[1]
+    page = PageViewParameters(pageview_parameters, location_url=referrer)
+    pageview_params, session_params = get_default_parameters(request, response, on_page=False,
+                                                             pageview_parameters=page,
+                                                             session_parameters=session_parameters)
     return default_client.event(GA_SETTINGS['ping_category'], GA_SETTINGS['ping_action'],
                                 label=GA_SETTINGS['ping_label'], non_interaction_hit=1, page_params=pageview_params,
                                 session_params=session_params)
