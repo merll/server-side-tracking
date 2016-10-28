@@ -100,6 +100,15 @@ class AbstractUrlGenerator(six.with_metaclass(ParameterMeta)):
             self.update(params)
         self.update_from_kwargs(kwargs)
 
+    def __len__(self):
+        return len(self._params)
+
+    def __repr__(self):
+        cp = self.meta.component_parameters
+        items = ', '.join('{0}={1!r}'.format(cp[k], v)
+                          for k, v in six.iteritems(self._params))
+        return '<{0}: {1}>'.format(self.__class__.__name__, items)
+
     def _update_from_dict(self, d):
         names = self.meta.parameter_names
         for k, v in six.iteritems(d):
@@ -132,6 +141,9 @@ class AbstractUrlGenerator(six.with_metaclass(ParameterMeta)):
                     setattr(self, k, v)
             else:
                 raise ValueError("Invalid field name '{0}'.".format(k))
+
+    def is_empty(self):
+        return len(self._params) > 0
 
     def validate(self):
         missing = {self.meta.component_parameters[req]
