@@ -5,6 +5,7 @@ import logging
 from uuid import uuid4
 
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpRequest
 from django.utils.six import text_type
 
 from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS, SERVER_SIDE_TRACKING_GA as GA_SETTINGS
@@ -185,9 +186,14 @@ def process_pageview(request, response, pageview_parameters=None, session_parame
 
 
 def process_ping(request, response, pageview_parameters=None, session_parameters=None):
-    pageview_params, session_params = get_default_parameters(request, response,
-                                                             pageview_parameters=pageview_parameters,
-                                                             session_parameters=session_parameters)
+    meta = request.META
+    referrer = meta.get('HTTP_REFERER')
+    if not referrer:
+        # Discard on direct access to view.
+        return
+    pageview_params = PageViewParameters(location_url=referrer)
+    pageview_params.update(pageview_parameters)
+    session_params = get_default_parameters(request, response, session_parameters=session_parameters)[1]
     return default_client.event(GA_SETTINGS['ping_category'], GA_SETTINGS['ping_action'],
                                 label=GA_SETTINGS['ping_label'], non_interaction_hit=1, page_params=pageview_params,
                                 session_params=session_params)
