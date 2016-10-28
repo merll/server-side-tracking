@@ -104,7 +104,7 @@ class PageViewParameters(UrlGenerator):
 
     def validate(self):
         super(PageViewParameters, self).validate()
-        if not self.location_url and (not self.host_name or not self.path):
+        if not self.location_url and (not self.host_name or not self.path) and not self.screen_name:
             raise InvalidParametersException("Either 'location_url' must be specified, or both 'host_name' and 'path'.")
 
 

@@ -154,7 +154,10 @@ class AnalyticsClient(object):
         :return: Varies, see :meth:`request`.
         :rtype: bool | unicode | str
         """
-        page = PageViewParameters(page_params, location_url=location_url, host_name=host_name, path=path)
+        if any((page_params, location_url, host_name, path)):
+            page = PageViewParameters(page_params, location_url=location_url, host_name=host_name, path=path)
+        else:
+            page = None
         event = EventParameters(category, action=action, label=label, value=value)
         session = SessionParameters(session_params)
         hit = HitParameters(hit_params, non_interaction_hit=non_interaction_hit)
@@ -188,7 +191,7 @@ class AnalyticsClient(object):
         :return: Returns ``True`` when all generated hits got sent or deferred to a separate thread / task.
         :rtype: bool
         """
-        page = PageViewParameters(page_params)
+        page = PageViewParameters(page_params) if page_params else None
         if revenue == 'sum':
             revenue = shipping or 0 + tax or 0 + sum((item.price or 0) * (item.quantity or 1) for item in items)
         transaction = EComTransactionParameters(transaction_id=transaction_id, affiliation=affiliation, revenue=revenue,
