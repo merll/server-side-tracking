@@ -24,6 +24,7 @@ SST_DEFAULT_SETTINGS = {
     'pageview_server_exceptions': False,
     'pageview_ajax_responses': False,
     'pageview_ajax_exceptions': False,
+    'own_cookie_name': 'its_me',
 }
 GA_DEFAULT_SETTINGS = {
     'ssl': True,

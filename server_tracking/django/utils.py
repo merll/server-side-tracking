@@ -122,6 +122,21 @@ def set_client_id(request, response, client_id, consent_action):
     return client_id
 
 
+def set_own_cookie(response):
+    response.set_signed_cookie(SST_SETTINGS['own_cookie_name'], '1',
+                               path=SST_SETTINGS['cookie_path'],
+                               salt=SST_SETTINGS['cookie_salt'],
+                               secure=SST_SETTINGS['cookie_secure'],
+                               expires='Fri, 31 Dec 9999 23:59:59 GMT',
+                               httponly=SST_SETTINGS['cookie_httponly'])
+
+
+def has_own_cookie(request):
+    cookie_value = request.get_signed_cookie(SST_SETTINGS['own_cookie_name'], default=None,
+                                             salt=SST_SETTINGS['cookie_salt'])
+    return cookie_value == '1'
+
+
 def get_client(default_parameters=None, **kwargs):
     """
     :param default_parameters: Default parameters.

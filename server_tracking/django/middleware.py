@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import logging
 
 from .settings import SERVER_SIDE_TRACKING as SST_SETTINGS
-from .utils import process_pageview, process_exception
+from .utils import has_own_cookie, process_pageview, process_exception
 
 
 log = logging.getLogger(__name__)
@@ -24,6 +24,8 @@ class PageViewMiddleware(object):
         return self.process_response(request, response)
 
     def process_response(self, request, response):
+        if has_own_cookie(request):
+            return response
         status_code = response.status_code
         if 200 <= status_code < 300:
             if self.track_ajax_responses or not request.is_ajax():
